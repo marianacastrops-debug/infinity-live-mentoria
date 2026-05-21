@@ -337,6 +337,7 @@ input[type=range]{flex:1;accent-color:var(--red2);cursor:pointer;}
         <label class="fl">Senha</label>
         <input class="fi" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password">
       </div>
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;"><input type="checkbox" id="l-remember" checked style="width:16px;height:16px;accent-color:#FF2233;cursor:pointer;"><label for="l-remember" style="font-size:13px;color:rgba(255,255,255,0.6);cursor:pointer;user-select:none;">Manter conectada</label></div>
       <button class="btn-login" onclick="doLogin()" id="btn-login">Entrar</button>
     </div>
     <div id="tab-register" style="display:none;">
@@ -588,7 +589,15 @@ const SUPABASE_URL = 'https://suyubzivvnleenejiatw.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_MtNGDeFq9P9wB2jWpK2TCQ_opNUHTcl'
 // ══════════════════════════════════════════
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'infinity-mentoria-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+})
 
 // Detecta se ainda não foi configurado
 if (SUPABASE_URL === 'COLE_SUA_URL_AQUI') {
@@ -666,12 +675,21 @@ function setMsg(msg,isOk=false){
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim()
   const pass=document.getElementById('l-pass').value
+  const remember=document.getElementById('l-remember')?.checked !== false
   if(!email||!pass){ setMsg('Preencha e-mail e senha.'); return }
   const btn=document.getElementById('btn-login')
   btn.disabled=true; btn.innerHTML='<span class="spin"></span> Entrando...'
-  const {error}=await sb.auth.signInWithPassword({email,password:pass})
+  // Define persistência: local = fica salvo, session = só enquanto o browser está aberto
+  await sb.auth.setSession && true
+  const {error}=await sb.auth.signInWithPassword({
+    email, password:pass,
+    options:{ persistSession: remember }
+  })
   btn.disabled=false; btn.textContent='Entrar'
   if(error) setMsg('E-mail ou senha incorretos.')
+  // Salva preferência localmente
+  if(!error && remember) localStorage.setItem('il_remember','1')
+  else localStorage.removeItem('il_remember')
 }
 
 async function doRegister(){
