@@ -202,12 +202,104 @@ input[type=range]{flex:1;accent-color:var(--red2);cursor:pointer;}
 .config-warn{background:rgba(232,0,15,0.1);border:1px solid rgba(232,0,15,0.3);border-radius:12px;padding:16px;margin-bottom:20px;font-size:13px;color:#FF8888;line-height:1.6;display:none;}
 .config-warn b{color:#FF4455;}
 
-@media(max-width:900px){
+/* ══ MOBILE NAV BOTTOM ══ */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);
+  border-top:1px solid var(--border);
+  padding:8px 0 max(8px, env(safe-area-inset-bottom));
+  z-index:500;
+  justify-content:space-around;
+}
+.mnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 16px;border:none;background:transparent;
+  font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;
+  color:var(--text3);font-size:10px;font-weight:600;
+  transition:all 0.2s;border-radius:10px;
+}
+.mnav-btn .mice{font-size:20px;}
+.mnav-btn.active{color:var(--red2);}
+.mnav-fab{
+  position:fixed;bottom:80px;right:20px;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#AA0010,#FF2233);
+  border:none;color:#fff;font-size:24px;
+  display:none;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px var(--red-glow);
+  cursor:pointer;z-index:400;transition:all 0.25s;
+}
+.mnav-fab:hover{transform:scale(1.1);}
+
+@media(max-width:768px){
+  /* Esconde sidebar e nav desktop */
   .sidebar{display:none;}
-  .g4{grid-template-columns:repeat(2,1fr);}
-  .g2{grid-template-columns:1fr;}
-  .frow{grid-template-columns:1fr;}
   .tnav{display:none;}
+  .topbar{padding:0 16px;height:54px;}
+  .tlogo span{font-size:14px;}
+  .tright .upill .uemail{display:none;}
+  
+  /* Mostra nav mobile */
+  .mobile-nav{display:flex;}
+  .mnav-fab{display:flex;}
+  
+  /* Ajusta main */
+  .app-wrap{min-height:calc(100vh - 54px);}
+  .main{padding-bottom:80px;}
+  .main .content,.main>div{padding:16px;}
+
+  /* Grids */
+  .g4{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .g2{grid-template-columns:1fr;gap:12px;margin-bottom:12px;}
+  .g3{grid-template-columns:1fr;gap:12px;}
+  .frow{grid-template-columns:1fr;gap:10px;}
+
+  /* Cards */
+  .card{padding:14px;}
+  .mcard{padding:14px;}
+  .mcard .val{font-size:22px;}
+
+  /* Topbar page header */
+  .page-header{flex-direction:column;align-items:flex-start;gap:10px;}
+  .page-header .btn-group{width:100%;display:flex;gap:8px;}
+  .page-header .btn-group .bp,.page-header .btn-group .bs{flex:1;justify-content:center;}
+
+  /* Mentee cards grid */
+  #mentees-content > div{grid-template-columns:1fr !important;}
+
+  /* Meeting rows */
+  .mr{gap:8px;}
+  .mr-time .d{font-size:12px;}
+  .mr-time .h{font-size:10px;}
+  .mr-name{font-size:12px;}
+  .mr-type{font-size:10px;}
+
+  /* Calendar */
+  .cal-cell{min-height:48px;padding:3px;}
+  .cal-daynum{font-size:11px;}
+  .cal-ev{font-size:9px;padding:1px 3px;}
+  .cal-dh{font-size:9px;padding:3px 0;}
+
+  /* Detail header */
+  .detail-header{flex-direction:column;align-items:flex-start;gap:12px;}
+  .detail-header > div:last-child{width:100%;flex-direction:row;flex-wrap:wrap;}
+
+  /* Modal */
+  .modal{padding:20px;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0;width:100% !important;max-width:100% !important;max-height:92vh;margin:0;}
+  .modal-bg{align-items:flex-end;}
+
+  /* Login */
+  .login-box{padding:28px 20px;border-radius:20px;}
+
+  /* Buttons */
+  .bp{font-size:12px;padding:8px 14px;}
+  .bs{font-size:11px;padding:7px 12px;}
+
+  /* Metric icon */
+  .mcard .ico{font-size:18px;margin-bottom:6px;}
+  .mcard .lbl{font-size:9px;}
+  .mcard .sub{font-size:10px;}
 }
 </style>
 </head>
@@ -371,6 +463,19 @@ input[type=range]{flex:1;accent-color:var(--red2);cursor:pointer;}
     </div><!-- /main -->
   </div><!-- /app-wrap -->
 </div><!-- /pg-app -->
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="mnav-btn active" id="mnav-dash" onclick="showView('dash')"><span class="mice">📊</span>Geral</button>
+  <button class="mnav-btn" id="mnav-cal" onclick="showView('cal')"><span class="mice">📅</span>Calendário</button>
+  <button class="mnav-btn" id="mnav-ments" onclick="showView('ments')"><span class="mice">👥</span>Mentorados</button>
+</nav>
+<button class="mnav-fab" id="mnav-fab" onclick="showFabMenu()" title="Novo">+</button>
+<div id="fab-overlay" onclick="hideFabMenu()" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.3);"></div>
+<div id="fab-menu" style="display:none;position:fixed;bottom:140px;right:16px;z-index:600;flex-direction:column;gap:10px;align-items:flex-end;">
+  <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;white-space:nowrap;">Nova Reunião</span><button onclick="openModalMeeting();hideFabMenu();" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7a5f00,#C8A800);border:none;color:#fff;font-size:18px;cursor:pointer;">📅</button></div>
+  <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;white-space:nowrap;">Novo Mentorado</span><button onclick="openModalMentee();hideFabMenu();" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#AA0010,#FF2233);border:none;color:#fff;font-size:18px;cursor:pointer;">👤</button></div>
+</div>
 
 <!-- MODAL: MENTORADO -->
 <div class="modal-bg" id="modal-mentee">
@@ -603,12 +708,26 @@ async function loadAll(){
 // ── VIEWS ──
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'))
-  document.querySelectorAll('.nbtn,.snbtn').forEach(el=>el.classList.remove('active'))
+  document.querySelectorAll('.nbtn,.snbtn,.mnav-btn').forEach(el=>el.classList.remove('active'))
   const el=document.getElementById('view-'+v)
   el.classList.add('active'); void el.offsetWidth
-  const ids=['nav-'+v,'snav-'+v]
+  const ids=['nav-'+v,'snav-'+v,'mnav-'+v]
   ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('active') })
   render(v)
+}
+
+function showFabMenu(){
+  const m=document.getElementById('fab-menu')
+  const o=document.getElementById('fab-overlay')
+  const isOpen=m.style.display==='flex'
+  m.style.display=isOpen?'none':'flex'
+  o.style.display=isOpen?'none':'block'
+  document.getElementById('mnav-fab').textContent=isOpen?'+':'✕'
+}
+function hideFabMenu(){
+  document.getElementById('fab-menu').style.display='none'
+  document.getElementById('fab-overlay').style.display='none'
+  document.getElementById('mnav-fab').textContent='+'
 }
 
 function renderAll(){ ['dash','cal','ments'].forEach(v=>render(v)); renderSidebar() }
