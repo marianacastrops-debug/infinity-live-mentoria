@@ -317,44 +317,22 @@ input[type=range]{flex:1;accent-color:var(--red2);cursor:pointer;}
     <div class="login-logo">
       <div class="login-sym">∞</div>
       <h1>Infinity <span>Mentoria</span></h1>
-      <p>Plataforma de gestão de mentorados</p>
+      <p>Acesso da equipe — use a senha compartilhada</p>
     </div>
     <div class="config-warn" id="config-warn">
       ⚠️ <b>Configure o Supabase primeiro!</b><br>
       Abra o arquivo <code>index.html</code>, encontre as linhas com<br>
       <code>SUPABASE_URL</code> e <code>SUPABASE_KEY</code> e substitua pelos seus valores.
     </div>
-    <div class="ltabs">
-      <div class="ltab active" onclick="setTab('login')">Entrar</div>
-      <div class="ltab" onclick="setTab('register')">Criar conta</div>
+    <div class="fg" style="margin-bottom:16px;">
+      <label class="fl">Senha da equipe</label>
+      <input class="fi" id="l-pass" type="password" placeholder="Digite a senha compartilhada" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
     </div>
-    <div id="tab-login">
-      <div class="fg">
-        <label class="fl">E-mail</label>
-        <input class="fi" id="l-email" type="email" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <div class="fg">
-        <label class="fl">Senha</label>
-        <input class="fi" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;"><input type="checkbox" id="l-remember" checked style="width:16px;height:16px;accent-color:#FF2233;cursor:pointer;"><label for="l-remember" style="font-size:13px;color:rgba(255,255,255,0.6);cursor:pointer;user-select:none;">Manter conectada</label></div>
-      <button class="btn-login" onclick="doLogin()" id="btn-login">Entrar</button>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 16px;">
+      <input type="checkbox" id="l-remember" checked style="width:16px;height:16px;accent-color:#FF2233;cursor:pointer;border-radius:4px;">
+      <label for="l-remember" style="font-size:13px;color:rgba(255,255,255,0.6);cursor:pointer;user-select:none;">Manter conectada neste dispositivo</label>
     </div>
-    <div id="tab-register" style="display:none;">
-      <div class="fg">
-        <label class="fl">Nome</label>
-        <input class="fi" id="r-name" type="text" placeholder="Seu nome completo">
-      </div>
-      <div class="fg">
-        <label class="fl">E-mail</label>
-        <input class="fi" id="r-email" type="email" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <div class="fg">
-        <label class="fl">Senha</label>
-        <input class="fi" id="r-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-      </div>
-      <button class="btn-login" onclick="doRegister()" id="btn-reg">Criar conta</button>
-    </div>
+    <button class="btn-login" onclick="doLogin()" id="btn-login">Entrar</button>
     <div class="lmsg" id="lmsg"></div>
   </div>
 </div>
@@ -374,8 +352,8 @@ input[type=range]{flex:1;accent-color:var(--red2);cursor:pointer;}
     </div>
     <div class="tright">
       <div class="upill">
-        <div class="uavatar" id="user-av">U</div>
-        <div class="uemail" id="user-email">...</div>
+        <div class="uavatar" id="user-av">∞</div>
+        <div class="uemail" id="user-email">Equipe Infinity</div>
       </div>
       <button class="btn-out" onclick="doLogout()">Sair</button>
     </div>
@@ -589,15 +567,11 @@ const SUPABASE_URL = 'https://suyubzivvnleenejiatw.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_MtNGDeFq9P9wB2jWpK2TCQ_opNUHTcl'
 // ══════════════════════════════════════════
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    storageKey: 'infinity-mentoria-auth',
-    storage: window.localStorage,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-})
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+// ── SENHA COMPARTILHADA DA EQUIPE ──
+const TEAM_PASSWORD = 'infinity2025'  // ⚠️ TROQUE ESSA SENHA
+const SESSION_KEY = 'infinity_mentoria_ok'
 
 // Detecta se ainda não foi configurado
 if (SUPABASE_URL === 'COLE_SUA_URL_AQUI') {
@@ -626,23 +600,18 @@ let STATE = { mentees:[], meetings:[], calYear:new Date().getFullYear(), calMont
 
 // ── INIT ──
 async function init(){
-  if(SUPABASE_URL==='COLE_SUA_URL_AQUI') return
-  const {data:{session}} = await sb.auth.getSession()
+  if(SUPABASE_URL==='COLE_SUA_URL_AQUI'){
+    hide('pg-loading'); show('pg-login'); return
+  }
   hide('pg-loading')
-  if(session){
-    STATE.user = session.user
+  // Verifica se já está autenticado (lembrar de mim)
+  const saved = localStorage.getItem(SESSION_KEY)
+  if(saved === 'true'){
     await loadAll()
     showApp()
   } else {
     show('pg-login')
   }
-  sb.auth.onAuthStateChange(async(_,session)=>{
-    if(session && !STATE.user){
-      STATE.user = session.user
-      await loadAll()
-      showApp()
-    }
-  })
 }
 
 function show(id){ document.getElementById(id).style.display='flex' }
@@ -650,20 +619,9 @@ function hide(id){ document.getElementById(id).style.display='none' }
 function showApp(){
   hide('pg-login')
   document.getElementById('pg-app').style.display='block'
-  const em = STATE.user.email
-  document.getElementById('user-email').textContent = em
-  document.getElementById('user-av').textContent = em[0].toUpperCase()
+  document.getElementById('user-email').textContent = 'Equipe Infinity'
+  document.getElementById('user-av').textContent = '∞'
   renderAll()
-}
-
-// ── AUTH ──
-let curTab='login'
-function setTab(t){
-  curTab=t
-  document.querySelectorAll('.ltab').forEach((el,i)=>el.classList.toggle('active',(t==='login'?i===0:i===1)))
-  document.getElementById('tab-login').style.display = t==='login'?'block':'none'
-  document.getElementById('tab-register').style.display = t==='register'?'block':'none'
-  setMsg('')
 }
 
 function setMsg(msg,isOk=false){
@@ -673,43 +631,32 @@ function setMsg(msg,isOk=false){
 }
 
 async function doLogin(){
-  const email=document.getElementById('l-email').value.trim()
-  const pass=document.getElementById('l-pass').value
+  const pass=document.getElementById('l-pass').value.trim()
   const remember=document.getElementById('l-remember')?.checked !== false
-  if(!email||!pass){ setMsg('Preencha e-mail e senha.'); return }
+  if(!pass){ setMsg('Digite a senha da equipe.'); return }
   const btn=document.getElementById('btn-login')
   btn.disabled=true; btn.innerHTML='<span class="spin"></span> Entrando...'
-  // Define persistência: local = fica salvo, session = só enquanto o browser está aberto
-  await sb.auth.setSession && true
-  const {error}=await sb.auth.signInWithPassword({
-    email, password:pass,
-    options:{ persistSession: remember }
-  })
+  await new Promise(r=>setTimeout(r,600)) // pequeno delay visual
+  if(pass !== TEAM_PASSWORD){
+    btn.disabled=false; btn.textContent='Entrar'
+    setMsg('Senha incorreta. Tente novamente.')
+    document.getElementById('l-pass').value=''
+    return
+  }
+  // Senha correta — salva sessão se "manter conectada"
+  if(remember) localStorage.setItem(SESSION_KEY,'true')
+  else localStorage.removeItem(SESSION_KEY)
+  await loadAll()
   btn.disabled=false; btn.textContent='Entrar'
-  if(error) setMsg('E-mail ou senha incorretos.')
-  // Salva preferência localmente
-  if(!error && remember) localStorage.setItem('il_remember','1')
-  else localStorage.removeItem('il_remember')
+  showApp()
 }
 
-async function doRegister(){
-  const name=document.getElementById('r-name').value.trim()
-  const email=document.getElementById('r-email').value.trim()
-  const pass=document.getElementById('r-pass').value
-  if(!name||!email||!pass){ setMsg('Preencha todos os campos.'); return }
-  if(pass.length<6){ setMsg('Senha deve ter no mínimo 6 caracteres.'); return }
-  const btn=document.getElementById('btn-reg')
-  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Criando conta...'
-  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{name}}})
-  btn.disabled=false; btn.textContent='Criar conta'
-  if(error) setMsg(error.message)
-  else setMsg('Conta criada! Verifique seu e-mail para confirmar.',true)
-}
-
-async function doLogout(){
-  await sb.auth.signOut()
-  STATE={...STATE,mentees:[],meetings:[],user:null}
+function doLogout(){
+  localStorage.removeItem(SESSION_KEY)
+  STATE={...STATE,mentees:[],meetings:[]}
   document.getElementById('pg-app').style.display='none'
+  document.getElementById('l-pass').value=''
+  setMsg('')
   show('pg-login')
 }
 
